@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atlas Celeste</title>
+
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="header">
+    <h1>✨ Atlas Celeste</h1>
+    <p>Clique em uma constelação para explorar em 3D</p>
+</header>
+
+<main class="container">
+
+    <% lista.forEach(c => { %>
+
+        <div class="card">
+            <div class="card-img">
+                <img src="<%= c.imagem %>" alt="<%= c.nome %>">
+            </div>
+
+            <div class="card-content">
+                <h2><%= c.nome %></h2>
+                <p><%= c.comentario %></p>
+
+                <a href="/constelacoes/<%= c._id %>" class="btn">Explorar</a>
+            </div>
+        </div>
+
+    <% }) %>
+
+</main>
+
+</body>
+</html>
