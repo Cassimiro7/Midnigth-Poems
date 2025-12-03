@@ -1,39 +1,43 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Atlas Celeste</title>
+    <title>Midnight Poems</title>
 
     <link rel="stylesheet" href="/css/style.css">
 </head>
+
 <body>
 
-<header class="header">
-    <h1>✨ Atlas Celeste</h1>
-    <p>Clique em uma constelação para explorar em 3D</p>
-</header>
+    <!-- Fundo animado (versão vídeo ou partículas) -->
+    <div class="bg-video">
+        <video autoplay loop muted playsinline>
+            <source src="/videos/night-sky.mp4" type="video/mp4">
+        </video>
+    </div>
 
-<main class="container">
+    <!-- Título principal -->
+    <header class="hero">
+        <h1>MIDNIGHT POEMS</h1>
+        <p>poemas guiados pelas estrelas</p>
+    </header>
 
-    <% lista.forEach(c => { %>
+    <!-- Grid de constelações -->
+    <main class="grid">
 
-        <div class="card">
-            <div class="card-img">
+        <% lista.forEach(c => { %>
+
+            <div class="card">
                 <img src="<%= c.imagem %>" alt="<%= c.nome %>">
-            </div>
-
-            <div class="card-content">
                 <h2><%= c.nome %></h2>
-                <p><%= c.comentario %></p>
-
-                <a href="/constelacoes/<%= c._id %>" class="btn">Explorar</a>
             </div>
-        </div>
 
-    <% }) %>
+        <% }) %>
 
-</main>
+    </main>
 
 </body>
+
 </html>
