@@ -5,6 +5,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (!grid || !overlay) return;
 
+  // tilt / parallax on mouse for cards
+  document.addEventListener('mousemove', (e) => {
+    const cx = innerWidth/2, cy = innerHeight/2;
+    const dx = (e.clientX - cx)/cx;
+    const dy = (e.clientY - cy)/cy;
+    document.querySelectorAll('.card-media .layer-bg').forEach(el=>{
+      el.style.transform = `translate(${dx*6}px, ${dy*4}px) scale(${1 + Math.abs(dx+dy)/150})`;
+    });
+    document.querySelectorAll('.card-media .layer-stars').forEach(el=>{
+      el.style.transform = `translate(${dx*10}px, ${dy*6}px) scale(${1 + Math.abs(dx+dy)/400})`;
+    });
+  });
+
   grid.addEventListener('click', (ev) => {
     const card = ev.target.closest('.card');
     if (!card) return;
@@ -27,27 +40,24 @@ document.addEventListener('DOMContentLoaded', () => {
         <button class="btn-close-3d" title="Fechar" aria-label="Fechar">&times;</button>
         <div class="detail-grid">
           <div>
-            <img class="main" src="${imagem}" alt="${nome}">
-            ${ forma ? `<img class="main" src="${forma}" alt="${nome} - forma">` : '' }
+            <div style="border-radius:12px; overflow:hidden">
+              <img class="main" src="${imagem}" alt="${nome}">
+              ${ forma ? `<img class="main" src="${forma}" alt="${nome} - forma">` : '' }
+            </div>
           </div>
           <div>
             <h2>${nome}</h2>
             <div class="meta"><strong>Visível:</strong> ${epoca}</div>
-            <p>${historia}</p>
-            <hr style="border-color: rgba(255,255,255,0.04)">
-            <p style="color:#b8cbe6"><strong>Observação:</strong> clique fora do painel ou no × para fechar.</p>
+            <p style="line-height:1.6">${historia}</p>
           </div>
         </div>
       </div>
     `;
 
     overlay.classList.add('open');
-
-    requestAnimationFrame(() => {
+    requestAnimationFrame(()=>{
       const panel = overlay.querySelector('.detail-panel');
-      if (!panel) return;
-      panel.classList.add('show');
-
+      if (panel) panel.classList.add('show');
       const btn = panel.querySelector('.btn-close-3d');
       if (btn) btn.addEventListener('click', closeDetail);
     });
@@ -56,9 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function closeDetail() {
     const panel = overlay.querySelector('.detail-panel');
     if (panel) panel.classList.remove('show');
-    setTimeout(() => {
-      overlay.classList.remove('open');
-      overlay.innerHTML = '';
-    }, 300);
+    setTimeout(()=>{ overlay.classList.remove('open'); overlay.innerHTML = ''; }, 280);
   }
 });

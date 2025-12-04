@@ -1,56 +1,60 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Midnight Poems</title>
+
+  <!-- Fonts: Cinzel Decorative (título), Cormorant Garamond (poético), Inter (UI) -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="/css/style.css">
 </head>
-
 <body>
 
-  <!-- Fundo animado -->
-  <div class="bg-video" aria-hidden="true">
-    <video autoplay loop muted playsinline>
-      <source src="/videos/night-sky.mp4" type="video/mp4">
-    </video>
-  </div>
+  <!-- Nebula animated layers -->
+  <div class="nebula nebula--layer1" aria-hidden="true"></div>
+  <div class="nebula nebula--layer2" aria-hidden="true"></div>
 
-  <!-- Título principal -->
-  <header class="hero">
-    <h1>MIDNIGHT POEMS</h1>
-    <p>poemas guiados pelas estrelas</p>
+  <!-- Starfield canvas (script stars.js) -->
+  <canvas id="starfield" aria-hidden="true"></canvas>
+
+  <header class="hero" role="banner">
+    <div class="hero-inner">
+      <h1 class="title">MIDNIGHT POEMS</h1>
+      <p class="subtitle">Um site sobre os poemas mais bonitos que existem: as estrelas.</p>
+    </div>
   </header>
 
-  <!-- Grid de constelações -->
-  <main id="grid" class="grid">
+  <main id="grid" class="grid container" role="main" aria-label="Lista de constelações">
     <% lista.forEach(c => { %>
-      <div class="card"
-           data-id="<%= c._id %>"
-           data-nome="<%= c.nome %>"
-           data-imagem="<%= c.imagem %>"
-           data-forma="<%= c.formaImg %>"
-           data-historia="<%= c.historia %>"
-           data-epoca="<%= c.epocaVisivel %>">
+      <article class="card"
+               tabindex="0"
+               data-id="<%= c._id %>"
+               data-nome="<%= c.nome %>"
+               data-imagem="<%= c.imagem %>"
+               data-forma="<%= c.formaImg %>"
+               data-historia="<%= c.historia %>"
+               data-epoca="<%= c.epocaVisivel %>">
 
-        <div class="card-media">
-          <!-- camada de fundo (coloque alt vazio para não mostrar texto) -->
+        <div class="card-media" aria-hidden="true">
           <img class="layer-bg" src="<%= c.background %>" alt="">
-          <!-- camada das estrelas (preferencialmente PNG com transparência) -->
           <img class="layer-stars" src="<%= c.imagem %>" alt="">
+          <div class="glow" aria-hidden="true"></div>
         </div>
 
-        <h2 class="card-title"><%= c.nome %></h2>
-      </div>
+        <div class="card-content">
+          <h2 class="card-title"><%= c.nome %></h2>
+          <p class="card-sub"><%= c.comentario %></p>
+        </div>
+      </article>
     <% }) %>
   </main>
 
-  <!-- Overlay / detalhe 3D -->
   <div id="overlay" class="overlay" aria-hidden="true"></div>
 
+  <!-- scripts (mantive stars.js e main.js que você já tem) -->
+  <script src="/js/stars.js"></script>
   <script src="/js/main.js"></script>
 </body>
-
 </html>
