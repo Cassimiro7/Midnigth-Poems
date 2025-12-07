@@ -1,5 +1,5 @@
 /* public/css/style.css
-   Visual upgrade: refined fonts, nebula layers, star glow, parallax micro-moves and responsive layout.
+   Visual upgrade + support for layer-lines following stars
 */
 
 /* Variables */
@@ -115,21 +115,32 @@ body{
   filter: contrast(1.02) saturate(1.05) brightness(0.88);
   transform-origin:center; transition: transform 900ms cubic-bezier(.2,.9,.2,1);
 }
+
 /* stars layer */
 .card-media .layer-stars{
   position:absolute; inset:0; width:100%; height:100%; object-fit:contain; z-index:2; pointer-events:none;
   mix-blend-mode: screen; filter: drop-shadow(0 10px 30px rgba(120,160,255,0.06));
   transform-origin:center; transition: transform 900ms cubic-bezier(.2,.9,.2,1);
 }
+
+/* lines layer - conecta as estrelas */
+.card-media .layer-lines{
+  position:absolute; inset:0; width:100%; height:100%; object-fit:contain; z-index:3; pointer-events:none;
+  mix-blend-mode: screen; /* troque para 'normal' se quiser lines mais fortes */
+  opacity:0.98;
+  filter: drop-shadow(0 8px 22px rgba(80,120,200,0.06));
+  transform-origin:center; transition: transform 900ms cubic-bezier(.2,.9,.2,1), opacity .25s;
+}
+
 /* glow overlay */
 .card-media .glow{
-  position:absolute; inset:0; z-index:3; pointer-events:none;
+  position:absolute; inset:0; z-index:4; pointer-events:none;
   background: radial-gradient(40% 30% at 40% 30%, rgba(110,168,255,0.05), transparent 22%);
   mix-blend-mode: screen;
 }
 
 /* Card text */
-.card-content{ padding:12px 22px 20px; text-align:center; z-index:4; }
+.card-content{ padding:12px 22px 20px; text-align:center; z-index:5; }
 .card-title{
   font-family: "Cormorant Garamond", serif;
   font-weight:600;
@@ -148,6 +159,7 @@ body{
 /* Hover micro-parallax */
 .card:hover .layer-bg{ transform: scale(1.06) translateY(-6px); }
 .card:hover .layer-stars{ transform: scale(1.02) translateY(-2px); }
+.card:hover .layer-lines{ transform: scale(1.02) translateY(-2px); }
 
 /* subtle stars pulse */
 @keyframes starPulse {
@@ -156,6 +168,15 @@ body{
   100% { filter: drop-shadow(0 8px 18px rgba(120,160,255,0.04)); transform: scale(1); }
 }
 .card-media .layer-stars { animation: starPulse 6.8s ease-in-out infinite; }
+
+/* float animation (aplica-se às stars e às lines para se moverem juntos) */
+@keyframes floatStars {
+  0%   { transform: translateY(-2px) scale(1); }
+  50%  { transform: translateY(3px) scale(1.015); }
+  100% { transform: translateY(-2px) scale(1); }
+}
+.card-media .layer-stars { animation: floatStars 4.0s ease-in-out infinite; }
+.card-media .layer-lines { animation: floatStars 4.0s ease-in-out infinite; }
 
 /* Overlay / detail panel */
 .overlay{ position:fixed; inset:0; display:none; justify-content:center; align-items:center; z-index:999; background: rgba(2,6,10,0.72); backdrop-filter: blur(6px); }
@@ -171,16 +192,4 @@ body{
   .grid{ gap:18px; margin:18px auto; }
   .card-media{ height:180px; }
   .card{ min-height:300px; }
-}
-
-/* animação de flutuação das estrelas da constelação */
-@keyframes floatStars {
-  0%   { transform: translateY(-2px) scale(1); }
-  50%  { transform: translateY(3px) scale(1.15); }
-  100% { transform: translateY(-2px) scale(1); }
-}
-
-/* aplicar a flutuação */
-.card-media .layer-stars {
-  animation: floatStars 4.0s ease-in-out infinite;
 }

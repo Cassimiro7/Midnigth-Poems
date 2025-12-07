@@ -5,18 +5,16 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Midnight Poems</title>
 
-  <!-- Fonts: Cinzel Decorative (título), Cormorant Garamond (poético), Inter (UI) -->
+  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
-  <!-- Nebula animated layers -->
   <div class="nebula nebula--layer1" aria-hidden="true"></div>
   <div class="nebula nebula--layer2" aria-hidden="true"></div>
 
-  <!-- Starfield canvas (script stars.js) -->
   <canvas id="starfield" aria-hidden="true"></canvas>
 
   <header class="hero" role="banner">
@@ -27,7 +25,7 @@
   </header>
 
   <main id="grid" class="grid container" role="main" aria-label="Lista de constelações">
-    <% lista.forEach(c => { %>
+    <% lista.forEach((c, i) => { %>
       <article class="card"
                tabindex="0"
                data-id="<%= c._id %>"
@@ -40,6 +38,8 @@
         <div class="card-media" aria-hidden="true">
           <img class="layer-bg" src="<%= c.background %>" alt="">
           <img class="layer-stars" src="<%= c.imagem %>" alt="">
+          <!-- lines: usamos encodeURI para prevenir problemas com espaços nos paths -->
+          <img class="layer-lines" src="<%= encodeURI(c.formaImg) %>" alt="<%= c.nome %> — linhas">
           <div class="glow" aria-hidden="true"></div>
         </div>
 
@@ -53,7 +53,6 @@
 
   <div id="overlay" class="overlay" aria-hidden="true"></div>
 
-  <!-- scripts (mantive stars.js e main.js que você já tem) -->
   <script src="/js/stars.js"></script>
   <script src="/js/main.js"></script>
 </body>

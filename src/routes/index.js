@@ -94,9 +94,9 @@ const lista = [
   {
     _id: 'pegaso',
     nome: 'Pégaso',
-    imagem: '/assets/Pegaso/stars.png',
-    background: '/assets/Pegaso/background.png',
-    formaImg: '/assets/Pegaso/lines.png',
+    imagem: '/assets/Pégaso/stars.png',
+    background: '/assets/Pégaso/background.png',
+    formaImg: '/assets/Pégaso/lines.png',
     comentario: 'Reconhecida pelo “Grande Quadrado de Pégaso”.',
     historia: 'O cavalo alado nascido do sangue da Medusa.',
     epocaVisivel: 'Outubro a Janeiro.'
