@@ -1,127 +1,179 @@
-// public/js/main.js
+// public/js/main.js (versão compatível com sua estrutura atual)
+// Requer elementos: #sky-container, .constellation, .constel-inner, .layer-stars, .layer-lines, #overlay
 document.addEventListener('DOMContentLoaded', () => {
   const overlay = document.getElementById('overlay');
   const sky = document.getElementById('sky-container');
   const constels = Array.from(document.querySelectorAll('.constellation'));
+  const header = document.querySelector('.hero');
   const bgBase = document.querySelector('.bg-base');
   const bgCosmo = document.querySelector('.bg-cosmo');
   const bgStars = document.querySelector('.bg-stars');
 
   if (!sky || constels.length === 0) {
+    // nothing to do (but still attach overlay handlers)
     attachOverlayHandlers();
     return;
   }
 
-  // --- placement + natural distortion ---
+  // ensure sky has reasonable height (under header)
+  function adjustSkyHeight() {
+    const headerBottom = header ? header.getBoundingClientRect().bottom : 120;
+    const newHeight = Math.max(240, window.innerHeight - headerBottom - 24);
+    sky.style.height = `${newHeight}px`;
+  }
+  adjustSkyHeight();
+
+  // small helper to test rect overlap with padding
+  function rectsOverlap(a, b, pad = 12) {
+    return !(a.right + pad < b.left || a.left - pad > b.right || a.bottom + pad < b.top || a.top - pad > b.bottom);
+  }
+
+  // find a free (non-overlapping) position with random attempts then spiral/grid fallback
+  function findFreePosition(sw, sh, w, h, placedRects, bandTop = 0, bandBottom = null, pad = 12, maxRandomTries = 140) {
+    bandBottom = bandBottom === null ? (sh - h) : bandBottom;
+    // try random spots first
+    for (let i = 0; i < maxRandomTries; i++) {
+      const x = Math.random() * Math.max(1, sw - w - 24) + 12;
+      const y = bandTop + Math.random() * Math.max(1, (bandBottom - bandTop));
+      const cand = { left: x, top: y, right: x + w, bottom: y + h };
+      if (!placedRects.some(r => rectsOverlap(cand, r, pad))) return { x, y };
+    }
+
+    // spiral search from center of band
+    const startX = Math.min(Math.max(12, Math.floor(sw/2 - w/2)), sw - w - 12);
+    const startY = Math.min(Math.max(bandTop + 12, Math.floor((bandTop + bandBottom)/2 - h/2)), bandBottom);
+    const maxRadius = Math.max(sw, sh);
+    const step = Math.max(12, Math.floor(Math.min(w, h) / 3));
+    for (let r = step; r < maxRadius; r += step) {
+      const samples = Math.min(32, Math.ceil(r / step) * 8);
+      for (let s = 0; s < samples; s++) {
+        const ang = (s / samples) * Math.PI * 2;
+        const x = Math.round(startX + Math.cos(ang) * r);
+        const y = Math.round(startY + Math.sin(ang) * r);
+        if (x < 12 || x > sw - w - 12 || y < bandTop || y > bandBottom) continue;
+        const cand = { left: x, top: y, right: x + w, bottom: y + h };
+        if (!placedRects.some(r2 => rectsOverlap(cand, r2, pad))) return { x, y };
+      }
+    }
+
+    // grid scan fallback
+    const cell = Math.max(40, Math.floor(Math.min(w, h) / 2));
+    for (let gy = 12; gy < sh - h - 12; gy += cell) {
+      for (let gx = 12; gx < sw - w - 12; gx += cell) {
+        const cand = { left: gx, top: gy, right: gx + w, bottom: gy + h };
+        if (!placedRects.some(r => rectsOverlap(cand, r, pad))) return { x: gx, y: gy };
+      }
+    }
+
+    // give up: random safe-ish coord
+    return { x: Math.random() * Math.max(1, sw - w - 24) + 12, y: Math.random() * Math.max(1, sh - h - 24) + 12 };
+  }
+
+  // main placement routine
   function placeConstellations() {
     const placedRects = [];
     const sw = sky.clientWidth;
     const sh = sky.clientHeight;
+    const pad = Math.max(8, Math.round(Math.min(sw, sh) * 0.03));
+
+    // divide into bands to ensure distribution (top, mid, bottom)
+    const bands = 3;
+    const perBand = Math.ceil(constels.length / bands);
+    let idx = 0;
 
     constels.forEach((btn) => {
-      const maxTries = 40;
-      let tries = 0;
-      let x=0,y=0,w=0,h=0,ok=false;
+      // reset transforms on parent (to ensure bbox is stable)
+      btn.style.transform = '';
 
-      // randomized visual params
-      const rotate = (Math.random() * 60 - 30).toFixed(2); // -30..30
-      const skewX = (Math.random() * 18 - 9).toFixed(2);   // -9..9 (mais variação)
-      const skewY = (Math.random() * 8 - 4).toFixed(2);
-      const scale = (0.8 + Math.random() * 0.6).toFixed(3); // 0.8..1.4
-      const floatDelay = (Math.random() * 6).toFixed(2) + 's';
-      // apply base transform first
-      btn.style.transform = `rotate(${rotate}deg) skewX(${skewX}deg) skewY(${skewY}deg) scale(${scale})`;
-      // slight color tint variation
-      const hue = Math.floor(Math.random() * 40 - 20);
-      btn.style.filter = `hue-rotate(${hue}deg) saturate(${0.94 + Math.random()*0.22})`;
+      // measure base size (untransformed)
+      const baseW = btn.offsetWidth || parseInt(getComputedStyle(btn).getPropertyValue('--size')) || Math.round(Math.min(200, sw * 0.18));
+      const baseH = btn.offsetHeight || baseW;
 
-      // set float animation with random duration/delay
-      btn.style.animation = `floatSlow ${5 + Math.random()*6}s ease-in-out ${floatDelay} infinite`;
+      // compute band boundaries
+      const bandIndex = Math.min(bands - 1, Math.floor(idx / perBand));
+      const bandHeight = Math.max(0, (sh - baseH));
+      const bandTop = (bandIndex / bands) * bandHeight;
+      const bandBottom = ((bandIndex + 1) / bands) * bandHeight;
 
-      // measure size after transform
-      const bbox = btn.getBoundingClientRect();
-      w = bbox.width;
-      h = bbox.height;
+      // find free place
+      const pos = findFreePosition(sw, sh, baseW, baseH, placedRects, bandTop, bandBottom, pad);
 
-      while(tries < maxTries && !ok) {
-        x = Math.random() * (Math.max(1, sw - w - 20)) + 10;
-        y = Math.random() * (Math.max(1, sh - h - 20)) + 10;
+      // set absolute coordinates relative to sky container
+      btn.style.left = `${Math.round(pos.x)}px`;
+      btn.style.top = `${Math.round(pos.y)}px`;
 
-        const candidate = { left: x, top: y, right: x + w, bottom: y + h };
-        let overlap = placedRects.some(r=>{
-          return !(candidate.right < r.left || candidate.left > r.right || candidate.bottom < r.top || candidate.top > r.bottom);
-        });
+      // record rect for future overlap tests
+      placedRects.push({ left: pos.x, top: pos.y, right: pos.x + baseW, bottom: pos.y + baseH });
 
-        if (!overlap) ok = true;
-        tries++;
+      // visual transforms applied to inner layer (keeps parent's bbox)
+      const inner = btn.querySelector('.constel-inner');
+      if (inner) {
+        const rotate = (Math.random() * 36 - 18).toFixed(2);
+        const skewX = (Math.random() * 8 - 4).toFixed(2);
+        const skewY = (Math.random() * 4 - 2).toFixed(2);
+        const scale = (0.92 + Math.random() * 0.28).toFixed(3);
+        const floatDelay = (Math.random() * 6).toFixed(2) + 's';
+
+        inner.style.transform = `rotate(${rotate}deg) skewX(${skewX}deg) skewY(${skewY}deg) scale(${scale})`;
+        inner.style.filter = `hue-rotate(${Math.floor(Math.random()*40-20)}deg) saturate(${0.98 + Math.random()*0.14})`;
+        inner.style.animation = `floatSlow ${5 + Math.random()*6}s ease-in-out ${floatDelay} infinite`;
       }
 
-      if (!ok) {
-        x = Math.random() * Math.max(1, sw - w);
-        y = Math.random() * Math.max(1, sh - h);
-      }
+      // z-index depth by vertical position
+      const zBase = 200;
+      btn.style.zIndex = String(zBase + Math.round((pos.y / Math.max(1, sh)) * 400));
 
-      btn.style.left = `${Math.round(x)}px`;
-      btn.style.top = `${Math.round(y)}px`;
-
-      // Slight per-layer rotation differences so lines don't perfectly overlay stars (natural)
-      const stars = btn.querySelector('.layer-stars');
-      const lines = btn.querySelector('.layer-lines');
-      if (stars) stars.style.transform = `rotate(${(Math.random()*6-3).toFixed(2)}deg)`;
-      if (lines) lines.style.transform = `rotate(${(Math.random()*6-3).toFixed(2)}deg)`;
-
-      placedRects.push({ left: x, top: y, right: x + w, bottom: y + h });
+      idx++;
     });
   }
 
-  // debounce resize
-  let rt;
-  function doResize() { clearTimeout(rt); rt = setTimeout(()=>placeConstellations(), 180); }
-  window.addEventListener('resize', doResize);
-  setTimeout(placeConstellations, 100);
+  // debounce and initial placement
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    adjustSkyHeight();
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(placeConstellations, 220);
+  });
 
-  // --- Parallax: mouse moves background and each constellation's layers --- 
+  // initial run (delay slightly to allow images/fonts to load)
+  setTimeout(() => {
+    adjustSkyHeight();
+    placeConstellations();
+  }, 120);
+
+  // parallax movement for background layers and slight movement for constellations' layers
+  let raf = null;
   document.addEventListener('mousemove', (e) => {
-    const cx = window.innerWidth/2, cy = window.innerHeight/2;
-    const dx = (e.clientX - cx)/cx; // -1..1
-    const dy = (e.clientY - cy)/cy;
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const cx = window.innerWidth/2, cy = window.innerHeight/2;
+      const dx = (e.clientX - cx)/cx;
+      const dy = (e.clientY - cy)/cy;
 
-    // background layers parallax (subtle)
-    if (bgBase) bgBase.style.transform = `translate(${dx*6}px, ${dy*4}px) scale(1.01)`;
-    if (bgCosmo) bgCosmo.style.transform = `translate(${dx*12}px, ${dy*8}px) scale(1.02) rotate(${dx*1.2}deg)`;
-    if (bgStars) bgStars.style.transform = `translate(${dx*18}px, ${dy*12}px) scale(1.03)`;
+      if (bgBase) bgBase.style.transform = `translate(${dx*6}px, ${dy*4}px) scale(1.01)`;
+      if (bgCosmo) bgCosmo.style.transform = `translate(${dx*12}px, ${dy*8}px) scale(1.02) rotate(${dx*1.2}deg)`;
+      if (bgStars) bgStars.style.transform = `translate(${dx*18}px, ${dy*12}px) scale(1.03)`;
 
-    // per-constellation micro-parallax (stars + lines move together)
-    document.querySelectorAll('.constellation').forEach((btn, i) => {
-      const stars = btn.querySelector('.layer-stars');
-      const lines = btn.querySelector('.layer-lines');
-
-      // depth factor based on index for slight variation
-      const depth = 6 + (i % 5);
-      const tx = dx * depth * (0.8 + (i%3)*0.12);
-      const ty = dy * depth * (0.8 + (i%4)*0.08);
-
-      // apply transforms but keep any existing rotate/skew by appending translate
-      if (stars) stars.style.transform = `${stripTranslate(stars.style.transform)} translate(${tx}px, ${ty}px)`;
-      if (lines) lines.style.transform = `${stripTranslate(lines.style.transform)} translate(${tx}px, ${ty}px)`;
+      document.querySelectorAll('.constellation').forEach((btn, i) => {
+        const stars = btn.querySelector('.layer-stars');
+        const lines = btn.querySelector('.layer-lines');
+        const depth = 6 + (i % 6);
+        const tx = Math.round(dx * depth * (0.9 + (i%3)*0.08));
+        const ty = Math.round(dy * depth * (0.9 + (i%4)*0.06));
+        if (stars) stars.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
+        if (lines) lines.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
+      });
     });
   });
 
-  function stripTranslate(transformStr) {
-    // remove previous translate(...) from inline transform to avoid stacking translates
-    if (!transformStr) return '';
-    // naive regex: remove translate(...) occurrences
-    return transformStr.replace(/translate\([^)]+\)/g, '').trim();
-  }
-
-  // click open detail (delegate)
-  sky.addEventListener('click', ev => {
+  // click to open detail (delegate)
+  sky.addEventListener('click', (ev) => {
     const btn = ev.target.closest('.constellation');
     if (!btn) return;
     openDetail(btn);
   });
 
-  // keyboard access
+  // keyboard (Enter / Space)
   document.querySelectorAll('.constellation').forEach(btn => {
     btn.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') {
@@ -181,4 +233,4 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(()=>{ overlay.classList.remove('open'); overlay.innerHTML = ''; }, 260);
   }
 
-});
+}); // DOMContentLoaded end

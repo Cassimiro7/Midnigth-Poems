@@ -1,56 +1,69 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Midnight Poems</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Midnight Poems</title>
 
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/css/style.css">
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+
+<link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
-  <!-- Fundo único: camadas fixas -->
-  <div class="sky">
-    <img class="bg-base" src="/assets/Background/background.png" alt="">
-    <img class="bg-cosmo" src="/assets/Background/cosmo.png" alt="">
-    <img class="bg-stars" src="/assets/Background/stars.png" alt="">
-    <canvas id="starfield" aria-hidden="true"></canvas>
-  </div>
 
-  <header class="hero" role="banner">
-    <div class="hero-inner">
-      <h1 class="title">MIDNIGHT POEMS</h1>
-      <p class="subtitle">poemas guiados pelas estrelas</p>
-    </div>
-  </header>
+<!-- Fundo único: camadas fixas -->
+<div class="sky">
+<img class="bg-base" src="/assets/Background/background.png" alt="">
+<img class="bg-cosmo" src="/assets/Background/cosmo.png" alt="">
+<img class="bg-stars" src="/assets/Background/stars.png" alt="">
+<canvas id="starfield" aria-hidden="true"></canvas>
+</div>
 
-  <!-- Container onde constelações serão posicionadas via JS -->
-  <main id="sky-container" class="sky-container" role="main" aria-label="Mapa celeste">
-    <% lista.forEach((c, i) => { %>
-      <button
-        class="constellation"
-        data-id="<%= c._id %>"
-        data-nome="<%= c.nome %>"
-        data-imagem="<%= encodeURI(c.imagem) %>"
-        data-forma="<%= encodeURI(c.formaImg) %>"
-        data-historia="<%= c.historia %>"
-        data-epoca="<%= c.epocaVisivel %>"
-        aria-label="Abrir <%= c.nome %>">
-        <div class="constel-media" aria-hidden="true">
-          <img class="layer-stars" src="<%= encodeURI(c.imagem) %>" alt="">
-          <img class="layer-lines" src="<%= encodeURI(c.formaImg) %>" alt="">
-        </div>
-        <!-- NOTE: rótulos visíveis removidos; para acessibilidade mantemos aria-label -->
-      </button>
-    <% }) %>
-  </main>
 
-  <div id="overlay" class="overlay" aria-hidden="true"></div>
+<header class="hero" role="banner">
+<div class="hero-inner">
+<h1 class="title">MIDNIGHT POEMS</h1>
+<p class="subtitle">poemas guiados pelas estrelas</p>
+</div>
+</header>
 
-  <script src="/js/stars.js"></script> <!-- starfield (mantido) -->
-  <script src="/js/main.js"></script>  <!-- main (substituir pelo novo abaixo) -->
+
+<!-- Container onde constelações serão posicionadas via JS -->
+<main id="sky-container" class="sky-container" role="main" aria-label="Mapa celeste">
+<% lista.forEach((c, i) => { %>
+<button
+class="constellation"
+data-id="<%= c._id %>"
+data-nome="<%= c.nome %>"
+data-imagem="<%= encodeURI(c.imagem) %>"
+data-forma="<%= encodeURI(c.formaImg) %>"
+data-historia="<%= c.historia %>"
+data-epoca="<%= c.epocaVisivel %>"
+aria-label="Abrir <%= c.nome %>">
+
+
+<!-- NOVO: camada interna que recebe transformações (rotações/skew/scale/anim) -->
+<div class="constel-inner">
+<div class="constel-media" aria-hidden="true">
+<img class="layer-stars" src="<%= encodeURI(c.imagem) %>" alt="">
+<img class="layer-lines" src="<%= encodeURI(c.formaImg) %>" alt="">
+</div>
+</div>
+
+
+</button>
+<% }) %>
+</main>
+
+
+<div id="overlay" class="overlay" aria-hidden="true"></div>
+
+
+<script src="/js/stars.js"></script> <!-- starfield (mantido) -->
+<script src="/js/main.js"></script> <!-- main (substituir pelo novo abaixo) -->
 </body>
 </html>
