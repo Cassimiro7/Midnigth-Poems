@@ -37,17 +37,6 @@ const lista = [
   },
 
   {
-    _id: 'escorpiao',
-    nome: 'Escorpião',
-    imagem: '/assets/Escorpiao/stars.png',
-    background: '/assets/Escorpiao/background.png',
-    formaImg: '/assets/Escorpiao/lines.png',
-    comentario: 'Famoso por Antares, a gigante vermelha.',
-    historia: 'Representa o escorpião que matou Órion na mitologia.',
-    epocaVisivel: 'Maio a Agosto (Brasil).'
-  },
-
-  {
     _id: 'cassiopeia',
     nome: 'Cassiopeia',
     imagem: '/assets/Cassiopeia/stars.png',
@@ -72,9 +61,9 @@ const lista = [
   {
     _id: 'leao',
     nome: 'Leão',
-    imagem: '/assets/Leao/stars.png',
-    background: '/assets/Leao/background.png',
-    formaImg: '/assets/Leao/lines.png',
+    imagem: '/assets/Leão/stars.png',
+    background: '/assets/Leão/background.png',
+    formaImg: '/assets/Leão/lines.png',
     comentario: 'Associado ao Leão de Neméia.',
     historia: 'Primeiro trabalho de Hércules.',
     epocaVisivel: 'Março a Junho.'
@@ -100,17 +89,6 @@ const lista = [
     comentario: 'Reconhecida pelo “Grande Quadrado de Pégaso”.',
     historia: 'O cavalo alado nascido do sangue da Medusa.',
     epocaVisivel: 'Outubro a Janeiro.'
-  },
-
-  {
-    _id: 'andromeda',
-    nome: 'Andrômeda',
-    imagem: '/assets/Andromeda/stars.png',
-    background: '/assets/Andromeda/background.png',
-    formaImg: '/assets/Andromeda/lines.png',
-    comentario: 'Famosa pela galáxia M31.',
-    historia: 'Filha de Cassiopeia, salva por Perseu.',
-    epocaVisivel: 'Setembro a Fevereiro.'
   },
 
   {
