@@ -50,20 +50,26 @@
               <div class="detail-tilt" aria-hidden="true">
                 <div class="detail-float" aria-hidden="true">
                   <div class="detail-parallax" aria-hidden="true">
+
+                    <!-- stars image (base) -->
                     <img class="detail-stars" src="<%= c.imagem %>" alt="<%= c.nome %>">
+
+                    <!-- lines image (overlay) - will be blended and parallaxed separately -->
                     <% if (c.formaImg) { %>
-                      <!-- lines image kept for aesthetic, but we will also draw SVG lines for animation -->
-                      <img class="detail-lines" src="<%= c.formaImg %>" alt="">
+                      <img class="detail-lines" src="<%= c.formaImg %>" alt="Linhas da constelação">
                     <% } %>
+
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- animated SVG overlay for constellation lines and sparks -->
+            <!-- SVG for sparks/circles (no connecting lines) -->
             <svg id="constellation-svg" class="constellation-svg" aria-hidden="true" preserveAspectRatio="none"></svg>
 
             <!-- hotspot container (JS will inject buttons here) -->
+            <div class="hotspot-wrap" aria-hidden="true"></div>
+
             <!-- tooltip for star hover -->
             <div id="star-tooltip" class="star-tooltip" role="status" aria-hidden="true"></div>
           </div>

@@ -1,10 +1,10 @@
 // public/js/constellation.js
-console.log('[constellation.js] carregado — mystical detail');
+console.log('[constellation.js] carregado — stars + lines overlay');
 
 document.addEventListener('DOMContentLoaded', () => {
   const detail = document.getElementById('detail-constel');
   if (!detail) {
-    console.warn('[constellation] elemento detail-constel não encontrado');
+    console.warn('[constellation] detail-constel não encontrado');
     return;
   }
 
@@ -12,8 +12,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const tooltip = document.getElementById('star-tooltip');
   const sideInfo = document.getElementById('star-info');
   const btnReset = document.getElementById('btn-reset');
+  const hotspotWrap = detail.querySelector('.hotspot-wrap') || document.createElement('div');
 
-  // parse data-stars robustly
+  // ensure hotspotWrap exists inside detail
+  if (!detail.contains(hotspotWrap)) {
+    hotspotWrap.className = 'hotspot-wrap';
+    hotspotWrap.style.position = 'absolute';
+    hotspotWrap.style.inset = '18% 7% 18% 7%';
+    hotspotWrap.style.pointerEvents = 'none';
+    detail.appendChild(hotspotWrap);
+  }
+
+  // parse stars metadata
   let starsMeta = [];
   try {
     const raw = detail.getAttribute('data-stars') || '[]';
@@ -30,18 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // create hotspot wrap (inside the detail bounds)
-  const hotspotWrap = document.createElement('div');
-  hotspotWrap.className = 'hotspot-wrap';
-  hotspotWrap.style.position = 'absolute';
-  hotspotWrap.style.inset = '18% 7% 18% 7%';
-  hotspotWrap.style.pointerEvents = 'none';
-  detail.appendChild(hotspotWrap);
-
-  // helper to map percentage coords to pixel in the hotspotWrap coordinate system
+  // helper: convert normalized coords (0..100) to pixel coordinates relative to the detail element
   function getPixelFromPercent(xPct, yPct) {
     const rect = detail.getBoundingClientRect();
-    // hotspot-wrap inset: 18% top/bottom, 7% left/right relative to detail
     const leftPad = rect.width * 0.07;
     const topPad = rect.height * 0.18;
     const innerW = rect.width - leftPad * 2;
@@ -51,64 +52,66 @@ document.addEventListener('DOMContentLoaded', () => {
     return { x, y, innerW, innerH, rectLeft: rect.left, rectTop: rect.top };
   }
 
-  // draw animated lines and sparks in SVG
- function drawConstellation() {
-  if (!svg) return;
-  // clear previous contents
-  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  // draw only sparks (circles) at star positions (no connecting lines)
+  function drawConstellation() {
+    if (!svg) return;
+    // clear previous SVG content
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
 
-  // size the SVG to the detail area
-  const rect = detail.getBoundingClientRect();
-  const width = Math.max(200, rect.width);
-  const height = Math.max(200, rect.height);
-  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  svg.style.width = '100%';
-  svg.style.height = '100%';
+    const rect = detail.getBoundingClientRect();
+    const width = Math.max(200, rect.width);
+    const height = Math.max(200, rect.height);
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.style.width = '100%';
+    svg.style.height = '100%';
 
-  // compute pixel positions for each star
-  const pointsPx = [];
-  for (let i = 0; i < starsMeta.length; i++) {
-    const s = starsMeta[i];
-    const p = getPixelFromPercent(s.x, s.y);
-    const localX = p.x - rect.left;
-    const localY = p.y - rect.top;
-    pointsPx.push({ x: localX, y: localY, data: s });
+    // compute points in local svg coords
+    const pointsPx = [];
+    for (let i = 0; i < starsMeta.length; i++) {
+      const s = starsMeta[i];
+      const p = getPixelFromPercent(s.x, s.y);
+      const localX = p.x - rect.left;
+      const localY = p.y - rect.top;
+      pointsPx.push({ x: localX, y: localY, data: s });
+    }
+
+    // create circles and glows
+    pointsPx.forEach((pt) => {
+      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('cx', pt.x);
+      c.setAttribute('cy', pt.y);
+      c.setAttribute('r', '2.8');
+      c.setAttribute('class', 'spark');
+      c.setAttribute('fill', '#ffffff');
+      c.setAttribute('opacity', '0.98');
+      svg.appendChild(c);
+
+      const glow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      glow.setAttribute('cx', pt.x);
+      glow.setAttribute('cy', pt.y);
+      glow.setAttribute('r', '6.4');
+      glow.setAttribute('class', 'glow');
+      glow.setAttribute('fill', 'none');
+      glow.setAttribute('stroke', '#a8c6ff');
+      glow.setAttribute('stroke-opacity', '0.12');
+      glow.setAttribute('stroke-width', '2');
+      svg.appendChild(glow);
+    });
   }
 
-  // draw only sparks (circles) at each star position, with a subtle outer glow
-  pointsPx.forEach((pt) => {
-    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    c.setAttribute('cx', pt.x);
-    c.setAttribute('cy', pt.y);
-    c.setAttribute('r', '2.8');
-    c.setAttribute('class', 'spark');
-    c.setAttribute('fill', '#fff');
-    c.setAttribute('opacity', '0.95');
-    svg.appendChild(c);
-
-    const cg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    cg.setAttribute('cx', pt.x);
-    cg.setAttribute('cy', pt.y);
-    cg.setAttribute('r', '6.4');
-    cg.setAttribute('fill', 'none');
-    cg.setAttribute('stroke', '#a8c6ff');
-    cg.setAttribute('stroke-opacity', '0.12');
-    cg.setAttribute('stroke-width', '2');
-    svg.appendChild(cg);
-  });
-}
-
-  // create hotspots and wire tooltip/pin behavior
+  // mount hotspots (buttons) using percent positions inside hotspot-wrap
   function mountHotspots() {
+    while (hotspotWrap.firstChild) hotspotWrap.removeChild(hotspotWrap.firstChild);
+
     starsMeta.forEach((s) => {
       if (typeof s.x !== 'number' || typeof s.y !== 'number' || !s.name) return;
 
       const btn = document.createElement('button');
       btn.className = 'star-hotspot';
       btn.type = 'button';
-      // percent positioning relative to hotspot-wrap
       btn.style.left = `${s.x}%`;
       btn.style.top = `${s.y}%`;
+      btn.style.transform = 'translate(-50%,-50%)';
       btn.setAttribute('aria-label', s.name);
       btn.setAttribute('data-star-name', s.name);
 
@@ -124,25 +127,20 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.appendChild(dot);
       hotspotWrap.appendChild(btn);
 
-      const show = (ev) => {
+      // handlers
+      const show = () => {
         if (!tooltip) return;
         tooltip.textContent = s.name;
         tooltip.classList.add('visible');
         tooltip.setAttribute('aria-hidden', 'false');
-
-        // position tooltip above the button center
         const r = btn.getBoundingClientRect();
-        const centerX = r.left + r.width / 2;
-        const centerY = r.top + r.height / 2;
-        positionTooltip(centerX, r.top);
+        positionTooltip(r.left + r.width / 2, r.top);
       };
-
-      const move = (ev) => {
+      const move = () => {
         if (!tooltip) return;
         const r = btn.getBoundingClientRect();
         positionTooltip(r.left + r.width / 2, r.top);
       };
-
       const hide = () => {
         if (!tooltip) return;
         tooltip.classList.remove('visible');
@@ -169,11 +167,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // position tooltip with overflow prevention
+  // tooltip position helper
   function positionTooltip(cx, topY) {
     if (!tooltip) return;
     const tw = tooltip.offsetWidth || 140;
-    const th = tooltip.offsetHeight || 34;
+    const th = tooltip.offsetHeight || 36;
     const margin = 8;
     let left = Math.round(cx - tw / 2);
     let top = Math.round(topY - th - 12);
@@ -184,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tooltip.style.top = `${top}px`;
   }
 
-  // pin star to side panel
+  // pin star info into side panel
   function pinStar(star) {
     if (!sideInfo) return;
     sideInfo.innerHTML = '';
@@ -206,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const metaEl = document.createElement('div');
     metaEl.className = 'meta';
-    metaEl.textContent = `Posição: ${star.x.toFixed(0)}% × ${star.y.toFixed(0)}%`;
+    metaEl.textContent = `Posição aproximada: ${star.x.toFixed(0)}% × ${star.y.toFixed(0)}%`;
 
     const descEl = document.createElement('div');
     descEl.className = 'desc';
@@ -221,8 +219,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     card.appendChild(badge);
     card.appendChild(info);
-
     sideInfo.appendChild(card);
+
     sideInfo.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
@@ -234,24 +232,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // initial render
-  drawConstellation();
-  mountHotspots();
+  // parallax effect: move parallax wrapper and move detail-lines slightly differently
+  const parallaxEl = detail.querySelector('.detail-parallax');
+  const detailLines = detail.querySelector('.detail-lines');
 
-  // redraw on resize / orientation change (and reposition tooltip)
-  let resizeTimeout = null;
-  window.addEventListener('resize', () => {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => {
-      // clear hotspots and svg then redraw
-      while (hotspotWrap.firstChild) hotspotWrap.removeChild(hotspotWrap.firstChild);
-      drawConstellation();
-      mountHotspots();
-      if (tooltip) tooltip.classList.remove('visible');
-    }, 140);
-  });
-
-  // small tilt/parallax for visual depth
   let raf = null;
   detail.addEventListener('mousemove', (e) => {
     if (raf) cancelAnimationFrame(raf);
@@ -259,26 +243,49 @@ document.addEventListener('DOMContentLoaded', () => {
       const rect = detail.getBoundingClientRect();
       const px = (e.clientX - rect.left) / Math.max(1, rect.width) - 0.5;
       const py = (e.clientY - rect.top) / Math.max(1, rect.height) - 0.5;
-      const rx = py * 6;
-      const ry = px * -6;
-      const tx = px * 8;
-      const ty = py * 8;
+
+      const rx = py * 5;
+      const ry = px * -5;
+      const tx = px * 10;
+      const ty = py * 10;
       const tilt = detail.querySelector('.detail-tilt');
-      const par = detail.querySelector('.detail-parallax');
+
       if (tilt) tilt.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
-      if (par) par.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
+      if (parallaxEl) parallaxEl.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
+
+      // lines move slightly in opposite direction for depth
+      if (detailLines) {
+        const lx = px * -6;
+        const ly = py * -4;
+        detailLines.style.transform = `translate3d(${lx}px, ${ly}px, 0) scale(1.001)`;
+      }
     });
   });
 
   detail.addEventListener('mouseleave', () => {
     const tilt = detail.querySelector('.detail-tilt');
-    const par = detail.querySelector('.detail-parallax');
     if (tilt) tilt.style.transform = '';
-    if (par) par.style.transform = '';
+    if (parallaxEl) parallaxEl.style.transform = '';
+    if (detailLines) detailLines.style.transform = '';
     if (tooltip) tooltip.classList.remove('visible');
   });
 
-  // hide tooltip on scroll to avoid mismatch
+  // initial render
+  drawConstellation();
+  mountHotspots();
+
+  // redraw on resize
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      drawConstellation();
+      mountHotspots();
+      if (tooltip) tooltip.classList.remove('visible');
+    }, 140);
+  }, { passive: true });
+
+  // hide tooltip on scroll
   document.addEventListener('scroll', () => {
     if (tooltip) tooltip.classList.remove('visible');
   }, { passive: true });

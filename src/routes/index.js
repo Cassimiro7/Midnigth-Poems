@@ -17,13 +17,12 @@ try {
  */
 const STARS_BY_CONSTELLATION = {
   'orion': [
-    { x: 44, y: 28, name: 'Betelgeuse' },
-    { x: 50, y: 44, name: 'Bellatrix' },
-    { x: 48, y: 56, name: 'Alnilam (Cinturão)' },
-    { x: 44, y: 60, name: 'Alnitak (Cinturão)' },
-    { x: 52, y: 60, name: 'Mintaka (Cinturão)' },
-    { x: 50, y: 72, name: 'Rigel' },
-    { x: 38, y: 72, name: 'Saiph' }
+    { x: 23.8, y: 21, name: 'Betelgeuse' },
+    { x: 54.15, y: 26.7, name: 'Bellatrix' },
+    { x: 41.3, y: 70.9, name: 'Alnilam (Cinturão)' },
+    { x: 33.75, y: 73.35, name: 'Alnitak (Cinturão)' },
+    { x: 47.9, y: 67.8, name: 'Mintaka (Cinturão)' },
+    { x: 63.6, y: 103, name: 'Rigel' },
   ],
   'ursa-maior': [
     { x: 73, y: 80, name: 'Dubhe' },
@@ -43,13 +42,12 @@ const STARS_BY_CONSTELLATION = {
     { x: 62, y: 48, name: 'Ruchbah' }
   ],
   'touro': [
-    { x: 48, y: 54, name: 'Aldebaran' },
-    { x: 56, y: 40, name: 'Alcyone (Plêiades)' },
-    { x: 58, y: 36, name: 'Atlas (Plêiades)' }
+    { x: 37.2, y: 58, name: 'Aldebaran' },
+    { x: 72, y: 30.5, name: 'Agl. Plêiades' }
   ],
   'leao': [
-    { x: 54, y: 62, name: 'Regulus' },
-    { x: 46, y: 50, name: 'Denebola' }
+    { x: 62.5, y: 81.2, name: 'Regulus' },
+    { x: 8.5, y: 72.2, name: 'Denebola' }
   ],
   'peixes': [
     { x: 52, y: 52, name: 'Alrescha' }
