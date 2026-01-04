@@ -52,91 +52,51 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // draw animated lines and sparks in SVG
-  function drawConstellation() {
-    if (!svg) return;
-    // clear
-    while (svg.firstChild) svg.removeChild(svg.firstChild);
+ function drawConstellation() {
+  if (!svg) return;
+  // clear previous contents
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
 
-    // set viewBox to 0 0 width height to match element size
-    const rect = detail.getBoundingClientRect();
-    const width = Math.max(200, rect.width);
-    const height = Math.max(200, rect.height);
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    svg.style.width = '100%';
-    svg.style.height = '100%';
+  // size the SVG to the detail area
+  const rect = detail.getBoundingClientRect();
+  const width = Math.max(200, rect.width);
+  const height = Math.max(200, rect.height);
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.style.width = '100%';
+  svg.style.height = '100%';
 
-    // defs: gradient for stroke
-    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-    const grad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-    grad.setAttribute('id', 'gline');
-    grad.setAttribute('x1', '0%'); grad.setAttribute('y1', '0%'); grad.setAttribute('x2', '100%'); grad.setAttribute('y2', '0%');
-
-    const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-    stop1.setAttribute('offset', '0%'); stop1.setAttribute('stop-color', '#9dbdff'); stop1.setAttribute('stop-opacity', '0.96');
-    const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-    stop2.setAttribute('offset', '100%'); stop2.setAttribute('stop-color', '#c9a7ff'); stop2.setAttribute('stop-opacity', '0.86');
-
-    grad.appendChild(stop1); grad.appendChild(stop2);
-    defs.appendChild(grad);
-    svg.appendChild(defs);
-
-    // build path connecting stars in given order
-    let d = '';
-    const pointsPx = [];
-    for (let i = 0; i < starsMeta.length; i++) {
-      const s = starsMeta[i];
-      const p = getPixelFromPercent(s.x, s.y);
-      // convert to local svg coords (relative to svg's left/top)
-      const localX = p.x - rect.left;
-      const localY = p.y - rect.top;
-      pointsPx.push({ x: localX, y: localY, data: s });
-      if (i === 0) d += `M ${localX.toFixed(1)} ${localY.toFixed(1)}`;
-      else d += ` L ${localX.toFixed(1)} ${localY.toFixed(1)}`;
-    }
-
-    // path
-    if (pointsPx.length > 1) {
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', d);
-      path.classList.add('line', 'shimmer');
-      path.setAttribute('stroke', 'url(#gline)');
-      path.setAttribute('stroke-width', '2.2');
-      path.setAttribute('fill', 'none');
-      svg.appendChild(path);
-
-      // gentle glow by duplicating path with low opacity thicker
-      const glow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      glow.setAttribute('d', d);
-      glow.setAttribute('stroke', 'url(#gline)');
-      glow.setAttribute('stroke-width', '6');
-      glow.setAttribute('opacity', '0.12');
-      glow.setAttribute('fill', 'none');
-      svg.appendChild(glow);
-    }
-
-    // sparks (small circles) at each star
-    pointsPx.forEach((pt, idx) => {
-      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      c.setAttribute('cx', pt.x);
-      c.setAttribute('cy', pt.y);
-      c.setAttribute('r', '2.8');
-      c.setAttribute('class', 'spark');
-      c.setAttribute('fill', '#fff');
-      c.setAttribute('opacity', '0.95');
-      svg.appendChild(c);
-
-      // small outer glow
-      const cg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      cg.setAttribute('cx', pt.x);
-      cg.setAttribute('cy', pt.y);
-      cg.setAttribute('r', '6.4');
-      cg.setAttribute('fill', 'none');
-      cg.setAttribute('stroke', '#a8c6ff');
-      cg.setAttribute('stroke-opacity', '0.12');
-      cg.setAttribute('stroke-width', '2');
-      svg.appendChild(cg);
-    });
+  // compute pixel positions for each star
+  const pointsPx = [];
+  for (let i = 0; i < starsMeta.length; i++) {
+    const s = starsMeta[i];
+    const p = getPixelFromPercent(s.x, s.y);
+    const localX = p.x - rect.left;
+    const localY = p.y - rect.top;
+    pointsPx.push({ x: localX, y: localY, data: s });
   }
+
+  // draw only sparks (circles) at each star position, with a subtle outer glow
+  pointsPx.forEach((pt) => {
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', pt.x);
+    c.setAttribute('cy', pt.y);
+    c.setAttribute('r', '2.8');
+    c.setAttribute('class', 'spark');
+    c.setAttribute('fill', '#fff');
+    c.setAttribute('opacity', '0.95');
+    svg.appendChild(c);
+
+    const cg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    cg.setAttribute('cx', pt.x);
+    cg.setAttribute('cy', pt.y);
+    cg.setAttribute('r', '6.4');
+    cg.setAttribute('fill', 'none');
+    cg.setAttribute('stroke', '#a8c6ff');
+    cg.setAttribute('stroke-opacity', '0.12');
+    cg.setAttribute('stroke-width', '2');
+    svg.appendChild(cg);
+  });
+}
 
   // create hotspots and wire tooltip/pin behavior
   function mountHotspots() {
