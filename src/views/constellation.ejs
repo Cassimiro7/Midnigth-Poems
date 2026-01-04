@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title><%= c.nome %> — Midnight Poems</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/constellation.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- background layers kept so page feels consistent -->
+  <div class="sky" aria-hidden="true">
+    <img class="bg-base" src="/assets/Background/background.png" alt="">
+    <img class="bg-cosmo" src="/assets/Background/cosmo.png" alt="">
+    <img class="bg-stars" src="/assets/Background/stars.png" alt="">
+    <canvas id="starfield" aria-hidden="true"></canvas>
+  </div>
+
+  <header class="hero" role="banner">
+    <div class="hero-inner">
+      <h1 class="title">MIDNIGHT POEMS</h1>
+      <p class="subtitle">Um site sobre as poesias mais bonitas que existem: as estrelas.</p>
+    </div>
+  </header>
+
+  <main class="container detail-page" style="padding:36px 18px 72px;">
+    <a href="/" class="back-link" style="color:rgba(210,220,255,0.95);text-decoration:none;margin-bottom:12px;display:inline-block;">← Voltar ao céu</a>
+
+    <div class="detail-panel show" style="margin-top:12px;">
+      <div class="detail-grid">
+        <!-- LEFT: visual stage -->
+        <div class="detail-left">
+          <div
+            id="detail-constel"
+            class="detail-constellation"
+            data-stars='<%= JSON.stringify(c.stars || []) %>'
+            role="img"
+            aria-label="Imagem da constelação <%= c.nome %>">
+
+            <!-- decorative blurred background (uses c.background if available) -->
+            <% if (c.background) { %>
+              <div class="detail-bg" aria-hidden="true" style="background-image:url('<%= c.background %>')"></div>
+            <% } %>
+
+            <!-- stage wrappers for tilt/float/parallax -->
+            <div class="detail-stage" aria-hidden="true">
+              <div class="detail-tilt" aria-hidden="true">
+                <div class="detail-float" aria-hidden="true">
+                  <div class="detail-parallax" aria-hidden="true">
+                    <img class="detail-stars" src="<%= c.imagem %>" alt="<%= c.nome %>">
+                    <% if (c.formaImg) { %>
+                      <!-- lines image kept for aesthetic, but we will also draw SVG lines for animation -->
+                      <img class="detail-lines" src="<%= c.formaImg %>" alt="">
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- animated SVG overlay for constellation lines and sparks -->
+            <svg id="constellation-svg" class="constellation-svg" aria-hidden="true" preserveAspectRatio="none"></svg>
+
+            <!-- hotspot container (JS will inject buttons here) -->
+            <!-- tooltip for star hover -->
+            <div id="star-tooltip" class="star-tooltip" role="status" aria-hidden="true"></div>
+          </div>
+
+          <!-- small caption under the image -->
+          <div class="image-caption">
+            <div class="caption-title"><%= c.nome %></div>
+            <div class="caption-sub">Visível: <strong><%= c.epocaVisivel %></strong></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: information / pinned star -->
+        <aside class="detail-side" id="detail-side" aria-labelledby="side-title" role="complementary">
+          <div class="side-header">
+            <h2 id="side-title"><%= c.nome %></h2>
+            <div class="side-sub">Um pequeno compêndio sobre a constelação</div>
+          </div>
+
+          <div class="side-content">
+            <div class="side-block side-about">
+              <h3>História</h3>
+              <p class="serif"><%= c.historia %></p>
+            </div>
+
+            <div class="side-block side-quick">
+              <h3>Resumo</h3>
+              <ul class="quick-list">
+                <li><strong>Época:</strong> <span><%= c.epocaVisivel %></span></li>
+                <li><strong>Comentário:</strong> <span><%= c.comentario %></span></li>
+                <li><strong>Estrelas em destaque:</strong>
+                  <div class="pill-list">
+                    <% (c.stars || []).slice(0,6).forEach(function(s){ %>
+                      <span class="pill"><%= s.name %></span>
+                    <% }) %>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <div class="side-block side-actions">
+              <h3>Explorar</h3>
+              <p>Passe o mouse sobre as estrelas à esquerda para ver nomes. Clique em uma estrela para fixá-la aqui.</p>
+              <div class="actions-row">
+                <button type="button" id="btn-reset" class="btn-ghost">Desfixar</button>
+                <a href="/" class="btn-cta">Voltar ao céu</a>
+              </div>
+            </div>
+
+            <div class="side-block side-pin" id="star-info" aria-live="polite">
+              <div class="pin-empty">Clique em uma estrela para ver detalhes</div>
+            </div>
+          </div>
+
+          <footer class="side-footer">
+            <div class="small">Dados e imagens: Midnight Poems • UI minimal</div>
+          </footer>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/stars.js"></script>
+  <script src="/js/constellation.js"></script>
+</body>
+</html>

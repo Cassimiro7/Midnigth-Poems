@@ -1,3 +1,4 @@
+<!-- views/index.ejs -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -30,14 +31,13 @@
   <!-- Container onde as constelações serão colocadas via JS -->
   <main id="sky-container" class="sky-container" role="main" aria-label="Mapa celeste">
     <% lista.forEach((c, i) => { %>
-      <button
+      <a
+        href="/constellation/<%= c._id %>"
         class="constellation"
         data-id="<%= c._id %>"
         data-nome="<%= c.nome %>"
         data-imagem="<%= encodeURI(c.imagem) %>"
-        data-forma="<%= encodeURI(c.formaImg) %>"
-        data-historia="<%= c.historia %>"
-        data-epoca="<%= c.epocaVisivel %>"
+        data-forma="<%= encodeURI(c.formaImg || '') %>"
         aria-label="Abrir <%= c.nome %>">
 
         <!-- ROTATOR: recebe apenas ROTATION (persistente) -->
@@ -49,20 +49,22 @@
               <!-- MEDIA: imagens (stars + lines) -->
               <div class="constel-media" aria-hidden="true">
                 <img class="layer-stars" src="<%= encodeURI(c.imagem) %>" alt="">
-                <img class="layer-lines" src="<%= encodeURI(c.formaImg) %>" alt="">
+                <% if (c.formaImg) { %>
+                  <img class="layer-lines" src="<%= encodeURI(c.formaImg) %>" alt="">
+                <% } %>
               </div>
             </div>
           </div>
         </div>
 
-      </button>
+      </a>
     <% }) %>
   </main>
 
   <div id="overlay" class="overlay" aria-hidden="true"></div>
 
   <!-- scripts -->
-  <script src="/js/stars.js"></script> <!-- seu starfield -->
+  <script src="/js/stars.js"></script> <!-- starfield (mantido) -->
   <script src="/js/main.js"></script>
 </body>
 </html>

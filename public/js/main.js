@@ -1,4 +1,6 @@
 // public/js/main.js
+// Mantém posicionamento e parallax do "céu" + adiciona detalhe com hotspots nas estrelas (modal behavior left intact but will not intercept link navigation)
+
 document.addEventListener('DOMContentLoaded', () => {
   const overlay = document.getElementById('overlay');
   const sky = document.getElementById('sky-container');
@@ -8,11 +10,36 @@ document.addEventListener('DOMContentLoaded', () => {
   const bgCosmo = document.querySelector('.bg-cosmo');
   const bgStars = document.querySelector('.bg-stars');
 
+  // --- MAPA DE COORDENADAS DAS CONSTELAÇÕES (used by modal variant; not required for page links) ---
+  // (kept for backward compatibility if you use non-link constellations later)
+  const starCoords = {
+    'orion': [
+      {x:44, y:28, name: 'Betelgeuse'},
+      {x:50, y:44, name: 'Bellatrix'},
+      {x:48, y:56, name: 'Alnilam (Cinturão)'},
+      {x:44, y:60, name: 'Alnitak (Cinturão)'},
+      {x:52, y:60, name: 'Mintaka (Cinturão)'},
+      {x:50, y:72, name: 'Rigel'},
+      {x:38, y:72, name: 'Saiph'}
+    ],
+    // ... (others omitted here to keep file concise; index.js provides authoritative stars for detail page)
+  };
+
+  // Tooltip element (one global)
+  let tooltip = document.querySelector('.star-tooltip');
+  if (!tooltip) {
+    tooltip = document.createElement('div');
+    tooltip.className = 'star-tooltip';
+    document.body.appendChild(tooltip);
+  }
+
+  // fallback: if no sky or constellations, attach overlay handlers and exit
   if (!sky || constels.length === 0) {
     attachOverlayHandlers();
     return;
   }
 
+  // --- helper functions for placement (kept from previous implementation) ---
   function adjustSkyHeight() {
     const headerBottom = header ? header.getBoundingClientRect().bottom : 120;
     const newHeight = Math.max(240, window.innerHeight - headerBottom - 24);
@@ -161,18 +188,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // click to open detail
+  // click to open detail BUT do not intercept <a href="/constellation/..."> links
   sky.addEventListener('click', ev => {
     const btn = ev.target.closest('.constellation');
     if (!btn) return;
-    openDetail(btn);
+
+    // If the constellation element is an anchor with href, allow the browser to navigate.
+    if (btn.tagName && btn.tagName.toLowerCase() === 'a' && btn.getAttribute('href')) {
+      // Let the navigation proceed; do not call openDetail
+      return;
+    }
+
+    // Otherwise, fallback to opening modal detail (for non-link UI)
+    if (typeof openDetail === 'function') openDetail(btn);
   });
 
   document.querySelectorAll('.constellation').forEach(btn => {
     btn.addEventListener('keydown', e => {
+      // For anchors, default Enter/Space should trigger navigation — don't override.
+      if (btn.tagName && btn.tagName.toLowerCase() === 'a' && btn.getAttribute('href')) return;
+
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        openDetail(btn);
+        if (typeof openDetail === 'function') openDetail(btn);
       }
     });
   });
@@ -185,28 +223,74 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   attachOverlayHandlers();
 
+  // ---------- DETAIL PANEL & HOTSPOTS (kept for modal fallback) ----------
+
+  // helper: convert normalized coords (0..100) to CSS left/top inside hotspot-wrap
+  function coordToCssPercent(coord) {
+    return { left: `${coord.x}%`, top: `${coord.y}%` };
+  }
+
+  // create hotspot buttons markup (used if modal path is used)
+  function buildHotspotsHtml(constelId) {
+    const coords = starCoords[constelId];
+    if (!coords || coords.length === 0) return '<div class="hotspot-wrap" aria-hidden="true"></div>';
+
+    // hotspots are positioned relative to hotspot-wrap using percentage coordinates
+    let html = '<div class="hotspot-wrap" aria-hidden="false">';
+    coords.forEach((s, i) => {
+      // left/top will be applied inline for precision
+      html += `<button class="star-hotspot" data-star-name="${escapeHtml(s.name)}" aria-label="${escapeHtml(s.name)}" style="left:${s.x}%;top:${s.y}%"><span class="hot-dot" aria-hidden="true"></span></button>`;
+    });
+    html += '</div>';
+    return html;
+  }
+
+  // escape helper for names
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  // Tracks event listeners to remove them later
+  let detailListeners = [];
+
+  // openDetail / closeDetail kept (modal fallback) - not used when link navigation is in place
   function openDetail(btn) {
+    // For safety if called, preserve previous implementation but keep simple
     const nome = btn.dataset.nome || '—';
     const imagem = btn.dataset.imagem || '/img/placeholder.png';
     const forma = btn.dataset.forma || '';
     const historia = btn.dataset.historia || 'Sem descrição.';
     const epoca = btn.dataset.epoca || 'Desconhecida';
+    const id = btn.dataset.id || (btn.dataset.nome || '').toLowerCase().replace(/\s+/g,'-');
+
+    const hotspotsHtml = buildHotspotsHtml(id);
 
     overlay.innerHTML = `
       <div class="detail-panel" role="dialog" aria-modal="true">
-        <button class="btn-close-3d" title="Fechar" aria-label="Fechar" style="float:right;font-size:28px;border:none;background:transparent;color:#fff;cursor:pointer">&times;</button>
-        <div class="detail-grid">
-          <div>
-            <div class="detail-constellation">
-             <img class="detail-stars" src="${imagem}" alt="${nome}">
-              ${forma ? `<img class="detail-lines" src="${forma}" alt="">` : ''}
+        <button class="btn-close-3d" title="Fechar" aria-label="Fechar" style="position:absolute;right:20px;top:18px;font-size:22px;border:none;background:transparent;color:#fff;cursor:pointer">&times;</button>
+
+        <div class="detail-constellation" aria-hidden="false">
+          <div class="detail-stage" data-constel="${escapeHtml(id)}">
+            <div class="detail-tilt">
+              <div class="detail-float">
+                <div class="detail-parallax">
+                  <img class="detail-stars" src="${escapeHtml(imagem)}" alt="${escapeHtml(nome)} - estrelas">
+                  ${forma ? `<img class="detail-lines" src="${escapeHtml(forma)}" alt="${escapeHtml(nome)} - linhas">` : ''}
+                </div>
+                ${hotspotsHtml}
+              </div>
             </div>
           </div>
-          <div>
-            <h2 style="margin-top:0">${nome}</h2>
-            <div class="meta"><strong>Visível:</strong> ${epoca}</div>
-            <p style="line-height:1.6">${historia}</p>
-          </div>
+        </div>
+
+        <div>
+          <h2 style="margin-top:0">${nome}</h2>
+          <div class="meta"><strong>Visível:</strong> ${epoca}</div>
+          <p style="line-height:1.6">${historia}</p>
+
+          <div class="subhead">Mais sobre ${nome}</div>
+          <p style="margin-top:8px;line-height:1.5;color:rgba(220,225,255,0.86)">Informações adicionais, curiosidades, estrelas principais e dicas de observação. Passe o mouse sobre as estrelas à esquerda para ver nomes; use tab para acessibilidade.</p>
+          <p style="margin-top:10px"><a href="#" class="back-link" id="back-to-sky">← Voltar ao céu</a></p>
         </div>
       </div>
     `;
@@ -215,15 +299,148 @@ document.addEventListener('DOMContentLoaded', () => {
     requestAnimationFrame(() => {
       const panel = overlay.querySelector('.detail-panel');
       if (panel) panel.classList.add('show');
+
+      // close button
       const btnClose = overlay.querySelector('.btn-close-3d');
       if (btnClose) btnClose.addEventListener('click', closeDetail);
+
+      // back link
+      const back = overlay.querySelector('#back-to-sky');
+      if (back) {
+        back.addEventListener('click', (ev) => { ev.preventDefault(); closeDetail(); });
+      }
+
+      // attach hotspot handlers
+      attachHotspotHandlers();
+
+      // attach tilt/parallax on the large constellation image (mouse move)
+      attachDetailParallax();
     });
   }
 
   function closeDetail() {
+    // remove listeners attached specifically to the detail panel
+    if (detailListeners && detailListeners.length) {
+      detailListeners.forEach(({el, ev, fn}) => {
+        try { el.removeEventListener(ev, fn); } catch(e){}
+      });
+      detailListeners = [];
+    }
+
     const panel = overlay.querySelector('.detail-panel');
     if (panel) panel.classList.remove('show');
     setTimeout(()=>{ overlay.classList.remove('open'); overlay.innerHTML = ''; }, 260);
+    hideTooltip();
   }
 
-}); // DOMContentLoaded end
+  // Attach handlers to hotspots (tooltip show/hide, keyboard accessibility)
+  function attachHotspotHandlers() {
+    const hotspots = overlay.querySelectorAll('.star-hotspot');
+    hotspots.forEach(h => {
+      // mouse enter
+      const onEnter = (ev) => {
+        const name = h.dataset.starName || h.getAttribute('aria-label') || '—';
+        showTooltip(name, ev.clientX, ev.clientY);
+      };
+      const onMove = (ev) => {
+        positionTooltip(ev.clientX, ev.clientY);
+      };
+      const onLeave = () => hideTooltip();
+
+      h.addEventListener('mouseenter', onEnter);
+      h.addEventListener('mousemove', onMove);
+      h.addEventListener('mouseleave', onLeave);
+
+      // focus/blur for keyboard
+      const onFocus = (ev) => {
+        const name = h.dataset.starName || h.getAttribute('aria-label') || '—';
+        const r = h.getBoundingClientRect();
+        const cx = r.left + r.width/2;
+        const cy = r.top + r.height/2;
+        showTooltip(name, cx, cy);
+      };
+      const onBlur = () => hideTooltip();
+
+      h.addEventListener('focus', onFocus);
+      h.addEventListener('blur', onBlur);
+
+      // store listeners to remove later
+      detailListeners.push({ el: h, ev: 'mouseenter', fn: onEnter });
+      detailListeners.push({ el: h, ev: 'mousemove', fn: onMove });
+      detailListeners.push({ el: h, ev: 'mouseleave', fn: onLeave });
+      detailListeners.push({ el: h, ev: 'focus', fn: onFocus });
+      detailListeners.push({ el: h, ev: 'blur', fn: onBlur });
+    });
+  }
+
+  // tooltip helpers
+  function showTooltip(text, clientX, clientY) {
+    tooltip.textContent = text;
+    tooltip.style.opacity = '1';
+    positionTooltip(clientX, clientY);
+  }
+  function positionTooltip(clientX, clientY) {
+    if (!tooltip) return;
+    const offset = 14;
+    const tw = tooltip.offsetWidth || 120;
+    const th = tooltip.offsetHeight || 28;
+    let left = clientX + offset;
+    let top = clientY + offset;
+    // keep inside viewport
+    if (left + tw > window.innerWidth - 8) left = clientX - offset - tw;
+    if (top + th > window.innerHeight - 8) top = clientY - offset - th;
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+  }
+  function hideTooltip() {
+    if (!tooltip) return;
+    tooltip.style.opacity = '0';
+  }
+
+  // attach tilt/parallax to the large constellation image area
+  function attachDetailParallax() {
+    const stage = overlay.querySelector('.detail-stage');
+    if (!stage) return;
+
+    const parallaxEl = stage.querySelector('.detail-parallax');
+    const imgStars = stage.querySelector('.detail-stars');
+    const imgLines = stage.querySelector('.detail-lines');
+
+    let lastMouse = {x:0,y:0};
+    const onMove = (ev) => {
+      const r = stage.getBoundingClientRect();
+      const cx = r.left + r.width/2;
+      const cy = r.top + r.height/2;
+      const dx = (ev.clientX - cx) / Math.max(1, r.width/2);
+      const dy = (ev.clientY - cy) / Math.max(1, r.height/2);
+
+      // tilt effect (rotateX / rotateY small)
+      const rotX = Math.max(-6, Math.min(6, dy * -6));
+      const rotY = Math.max(-6, Math.min(6, dx * 6));
+      stage.style.transform = `perspective(900px) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+
+      // parallax translate for image layers
+      const depth = 12;
+      if (parallaxEl) parallaxEl.style.transform = `translate3d(${dx * depth}px, ${dy * depth}px, 0)`;
+      if (imgStars) imgStars.style.transform = `translate3d(${dx * depth * 0.5}px, ${dy * depth * 0.5}px, 0)`;
+      if (imgLines) imgLines.style.transform = `translate3d(${dx * depth * 0.8}px, ${dy * depth * 0.8}px, 0)`;
+
+      lastMouse = {x: ev.clientX, y: ev.clientY};
+    };
+
+    const onLeave = () => {
+      // reset transforms smoothly
+      stage.style.transform = '';
+      if (parallaxEl) parallaxEl.style.transform = '';
+      if (imgStars) imgStars.style.transform = '';
+      if (imgLines) imgLines.style.transform = '';
+    };
+
+    stage.addEventListener('mousemove', onMove);
+    stage.addEventListener('mouseleave', onLeave);
+
+    detailListeners.push({ el: stage, ev: 'mousemove', fn: onMove });
+    detailListeners.push({ el: stage, ev: 'mouseleave', fn: onLeave });
+  }
+
+});
