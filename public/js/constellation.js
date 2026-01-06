@@ -233,8 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // parallax effect: move parallax wrapper and move detail-lines slightly differently
-  const parallaxEl = detail.querySelector('.detail-parallax');
-  const detailLines = detail.querySelector('.detail-lines');
+  
 
   let raf = null;
   detail.addEventListener('mousemove', (e) => {

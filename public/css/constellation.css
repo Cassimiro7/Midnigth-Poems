@@ -9,27 +9,27 @@
   --mystic-b: #c8a7ff;
 }
 
-/* panel */
+body { font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; color: var(--text); }
+
+/* container painel */
 .detail-panel {
   width: 100%;
-  max-width: 1280px;
-  margin: 14px auto 64px;
-  padding: 18px;
-  background: linear-gradient(180deg, rgba(6,8,12,0.92), rgba(3,5,8,0.98));
-  border-radius: 14px;
-  box-shadow: 0 40px 140px rgba(2,6,12,0.75), inset 0 1px 0 rgba(255,255,255,0.02);
+  max-width: 1200px;
+  margin: 28px auto 72px;
+  padding: 22px;
+  background: linear-gradient(180deg, rgba(14,8,26,0.55), rgba(6,4,16,0.78));
+  border-radius: 16px;
+  box-shadow: 0 30px 110px rgba(40,10,70,0.26);
+  border: 1px solid rgba(120,80,200,0.03);
 }
 
 /* grid */
 .detail-grid {
   display: grid;
   grid-template-columns: 1fr 420px;
-  gap: 30px;
-  align-items: start;
+  gap: 36px;
 }
-@media (max-width:1040px){ .detail-grid { grid-template-columns: 1fr 360px; } }
-@media (max-width:860px) { .detail-grid { grid-template-columns: 1fr; } }
-
+@media (max-width: 960px) { .detail-grid { grid-template-columns: 1fr; } }
 /* left */
 .detail-left { display:flex; flex-direction:column; gap:14px; align-items:center; }
 
@@ -191,4 +191,15 @@
   .detail-constellation { max-width:100%; height:420px; aspect-ratio:auto; }
   .hot-halo { width:48px; height:48px; }
   .star-hotspot { width:32px; height:32px; }
+}
+.back-link {
+  display:inline-block;
+  padding: 10px 16px;
+  border-radius: 999px;
+  color: var(--text);
+  text-decoration: none;
+  font-weight:600;
+  background: linear-gradient(90deg, rgba(140,90,255,0.12), rgba(110,60,210,0.08));
+  border: 1px solid rgba(140,90,255,0.18);
+  box-shadow: 0 8px 28px rgba(100,60,180,0.08);
 }
